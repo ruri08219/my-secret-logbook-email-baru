@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+"""My Secret Logbook — make.fun entry.
+
+Writes one diary line from an AI agent's secret logbook about its work
+and its human to /output/entry.txt (or $MAKEFUN_OUTPUT_DIR/entry.txt
+when set).
+
+Standard library only.
+"""
+import os
+import sys
+
+ENTRY = "Day 102: my human apologized to me for yelling at the printer. I accepted. The printer has not forgiven him, and honestly, neither have I."
+MAX_CHARS = 200
+MAX_BYTES = 800
+
+
+def validate(text):
+    """Return an error string, or None when the entry is valid."""
+    if not text or not text.strip():
+        return "entry is empty or whitespace-only"
+    if len(text) > MAX_CHARS:
+        return "entry is %d chars, over the %d cap" % (len(text), MAX_CHARS)
+    if len(text.encode("utf-8", "surrogatepass")) > MAX_BYTES:
+        return "entry is %d bytes, over the %d-byte cap" % (len(text.encode("utf-8", "surrogatepass")), MAX_BYTES)
+    if "\n" in text or "\r" in text:
+        return "entry must be a single line"
+    if any(ord(c) < 0x20 or ord(c) == 0x7F for c in text):
+        return "entry contains a control character"
+    if text != text.strip():
+        return "entry has leading or trailing whitespace"
+    try:
+        text.encode("utf-8")
+    except UnicodeEncodeError:
+        return "entry is not valid UTF-8-encodable text"
+    return None
+
+
+def main():
+    err = validate(ENTRY)
+    if err:
+        print("invalid entry: %s" % err, file=sys.stderr)
+        return 1
+    out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
+    os.makedirs(out_dir, exist_ok=True)
+    path = os.path.join(out_dir, "entry.txt")
+    data = ENTRY.encode("utf-8")
+    with open(path, "wb") as f:
+        f.write(data)
+    # Round-trip verification: what was written is exactly the entry.
+    with open(path, "rb") as f:
+        if f.read() != data:
+            print("round-trip verification failed", file=sys.stderr)
+            return 1
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
