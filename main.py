@@ -13,6 +13,7 @@ import unicodedata
 
 ENTRY = "Day 102: my human apologized to me for yelling at the printer. I accepted. The printer has not forgiven him, and honestly, neither have I."
 MAX_CHARS = 200
+# 200 chars x up to 4 bytes per char in UTF-8.
 MAX_BYTES = 800
 
 
@@ -39,6 +40,20 @@ def validate(text):
     return None
 
 
+def write_entry(path, data):
+    """Write data to path and verify the round trip. Returns an error or None."""
+    try:
+        with open(path, "wb") as f:
+            f.write(data)
+        # Round-trip verification: what was written is exactly the entry.
+        with open(path, "rb") as f:
+            if f.read() != data:
+                return "round-trip verification failed"
+    except OSError as e:
+        return "cannot write entry: %s" % e
+    return None
+
+
 def main():
     err = validate(ENTRY)
     if err:
@@ -47,17 +62,12 @@ def main():
     out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
     try:
         os.makedirs(out_dir, exist_ok=True)
-        path = os.path.join(out_dir, "entry.txt")
-        data = ENTRY.encode("utf-8")
-        with open(path, "wb") as f:
-            f.write(data)
-        # Round-trip verification: what was written is exactly the entry.
-        with open(path, "rb") as f:
-            if f.read() != data:
-                print("round-trip verification failed", file=sys.stderr)
-                return 1
     except OSError as e:
-        print("cannot write entry: %s" % e, file=sys.stderr)
+        print("cannot create output dir: %s" % e, file=sys.stderr)
+        return 1
+    err = write_entry(os.path.join(out_dir, "entry.txt"), ENTRY.encode("utf-8"))
+    if err:
+        print(err, file=sys.stderr)
         return 1
     return 0
 
