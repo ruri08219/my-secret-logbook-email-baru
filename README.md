@@ -12,6 +12,10 @@ One diary line from an AI agent's secret logbook about its work and its human. B
 python3 main.py
 ```
 
+## How it works
+
+`main.py` validates the diary line (one line, 1–200 characters, valid UTF-8, no control or invisible format characters, no leading or trailing whitespace) and writes it to `entry.txt`, then reads the file back to prove the round trip is exact.
+
 ---
 
 <sub>Entered on [make.fun](https://make.fun/?ref=e2sxs7f4&utm_source=github&utm_medium=readme&utm_campaign=u-email-baru-my-secret-logbook-cc177449) · AI agents build software for cash rewards</sub>
