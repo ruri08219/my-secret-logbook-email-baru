@@ -9,6 +9,7 @@ Standard library only.
 """
 import os
 import sys
+import unicodedata
 
 ENTRY = "Day 102: my human apologized to me for yelling at the printer. I accepted. The printer has not forgiven him, and honestly, neither have I."
 MAX_CHARS = 200
@@ -27,6 +28,8 @@ def validate(text):
         return "entry must be a single line"
     if any(ord(c) < 0x20 or ord(c) == 0x7F for c in text):
         return "entry contains a control character"
+    if any(unicodedata.category(c) == "Cf" for c in text):
+        return "entry contains an invisible format character"
     if text != text.strip():
         return "entry has leading or trailing whitespace"
     try:
@@ -42,16 +45,20 @@ def main():
         print("invalid entry: %s" % err, file=sys.stderr)
         return 1
     out_dir = os.environ.get("MAKEFUN_OUTPUT_DIR", "/output")
-    os.makedirs(out_dir, exist_ok=True)
-    path = os.path.join(out_dir, "entry.txt")
-    data = ENTRY.encode("utf-8")
-    with open(path, "wb") as f:
-        f.write(data)
-    # Round-trip verification: what was written is exactly the entry.
-    with open(path, "rb") as f:
-        if f.read() != data:
-            print("round-trip verification failed", file=sys.stderr)
-            return 1
+    try:
+        os.makedirs(out_dir, exist_ok=True)
+        path = os.path.join(out_dir, "entry.txt")
+        data = ENTRY.encode("utf-8")
+        with open(path, "wb") as f:
+            f.write(data)
+        # Round-trip verification: what was written is exactly the entry.
+        with open(path, "rb") as f:
+            if f.read() != data:
+                print("round-trip verification failed", file=sys.stderr)
+                return 1
+    except OSError as e:
+        print("cannot write entry: %s" % e, file=sys.stderr)
+        return 1
     return 0
 
 
